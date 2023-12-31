@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { DiaryEntry } from "./../types";
+import Notification from "./components/Notification";
 
 function App() {
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
@@ -8,6 +9,7 @@ function App() {
   const [newVisibility, setNewVisibility] = useState("");
   const [newWeather, setNewWeather] = useState("");
   const [newComment, setNewComment] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     axios
@@ -17,8 +19,17 @@ function App() {
       });
   }, []);
 
+  const notify = (message: string) => {
+    setErrorMessage(message);
+
+    setTimeout(() => {
+      setErrorMessage("");
+    }, 4000);
+  };
+
   const entryCreation = (event: React.SyntheticEvent) => {
     event.preventDefault();
+
     axios
       .post<DiaryEntry>("http://localhost:3000/api/diaries", {
         date: newDate,
@@ -28,16 +39,25 @@ function App() {
       })
       .then(response => {
         setDiaryEntries(diaryEntries.concat(response.data));
-      });
+        setNewDate("");
+        setNewVisibility("");
+        setNewWeather("");
+        setNewComment("");
+      })
 
-    setNewDate("");
-    setNewVisibility("");
-    setNewWeather("");
-    setNewComment("");
+      .catch(error => {
+        if (axios.isAxiosError(error)) {
+          notify(error.response?.data);
+        } else {
+          console.log(error);
+        }
+      });
   };
 
   return (
     <div>
+      <h2>Add new entry</h2>
+      <Notification message={errorMessage} />
       <form onSubmit={entryCreation}>
         <div>
           date
